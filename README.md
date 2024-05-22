@@ -1,43 +1,48 @@
-# Rate Limit
+# Rate-Limit
 
-## Description
-A rate limit restricts the number of requests a server can handle from a user within a specified timeframe. This can be applied based on various criteria such as the user's IP address, authentication credentials, etc.
+We all have basic idea about APIs but can we know about the Rate Limit.
+APIs creation is not a big thing but the proper standard format way to create APIs
+Its challanging part.
 
-## Detailed Explanation
-Consider an API with a rate limit of 1,000 requests per minute. If a user, identified by their IP address, exceeds this limit, any subsequent requests within the same minute are blocked, and the application responds with a polite throttle message to the user.
+# Prerequisites:
+ 1. Python
+ 2. Docker
+ 3. Basic knowledge about Rate Limit
 
-## Strategies for Implementing Rate Limits
-There are several methods to implement rate limiting:
+# Python frameworks included are:
+In application we are use one librarie.
+ 1. Flask (microservice framework)
 
-1. **Token Bucket**: This method involves a bucket filled with tokens, which represent the request capacity. When the bucket is empty, no more requests can be granted until it refills over time.
+# Follow Below steps to run game.
+ 1. Create folder and clone repo.
+ 2. Create environment.
+    ```bash
+    python3 -m venv env
+    ```
+ 3. Activate environment.
+    ```bash
+    source env/bin/activate
+    ```
+ 4. Install requirement.txt.
+    ```bash
+    pip install requirement.txt
+    ```
+ 5. Run game.
+    ```bash
+    python app.py
+    ```
 
-    **Advantages**:
-    - **Efficiency**: Only a fixed number of tokens need to be stored in memory, which can be crucial for systems with limited resources.
-    - **Flexibility**: Suitable for handling both evenly distributed and burst traffic patterns.
+# Build application with docker file.
+ 1. Create folder and clone repo.
+ 2. Active application.
+   ```bash
+   docker compose up
+   ```
 
-2. **Leaky Bucket**: Similar to the token bucket but with a continuous leak. Requests are added to the bucket and leak out at a steady rate, allowing for a controlled rate of processing.
+# Note: 
 
-    **Advantages**:
-    - **Smooth Output**: Provides a smooth flow of outgoing requests, preventing bursts.
-    - **Predictability**: Offers more predictable and constant request handling.
+ 1. By default, the application uses the `fix window rate limit` algorithm.
+ 2. In the application, we built a rate limit algorithm on middleware.
 
-3. **Fixed Window Counter**: Uses a fixed timeframe (e.g., one minute) to count requests. Resets the count at the start of the next window, potentially allowing bursts of traffic.
-
-    **Advantages**:
-    - **Simplicity**: Easy to implement and understand.
-    - **Effectiveness**: Good at handling consistent high traffic within defined intervals.
-
-4. **Sliding Window Counter**: More sophisticated, combining the precision of the fixed window with a smoother request distribution by sliding the window period gradually.
-
-    **Advantages**:
-    - **Fairness**: More fair as it considers the exact time of each request, not just the count per interval.
-    - **Flexibility**: Prevents the burst issue at the edges of the time windows seen in fixed window counters.
-
-5. **IP Throttling**: Directly limits the request rate based on each individual IP address, useful for preventing abuse from a single source.
-
-    **Advantages**:
-    - **Targeted Control**: Effective at isolating and mitigating abuse from specific sources.
-    - **Simplicity**: Easy to implement as it often requires only minor changes to the existing infrastructure.
-
-**Use Case**:
-- Each method is useful depending on the specific requirements of the system it protects, from handling evenly distributed loads to managing and mitigating burst traffic or potential abuse.
+## What is the middleware?
+Every request/response by throw middleware.
