@@ -1,51 +1,57 @@
-"""
-This module implements a fixed window rate limiting algorithm. 
-It is designed to restrict the rate at which
-requests can be made by an entity within a specified time window, 
-thus preventing abuse and ensuring fair use of resources.
+"""This module contain rate limitation of the all APIs.
+If incase user want to hit API offten; user throttled.
 
-Example:
+For this application usecase, impliment `Fix Window` with individual storage 
+Rate Limit Algorithms
+
+Fix Window Description:
+Every use has own storage with fix rate window,
+If use hit offten request; storage will be full and user threttled.
+
+For example,
     Time Window = 60
     Request Limit = 100
-"""
-import datetime
-import logging
-import jwt
 
+Note: We have used Redis server for storing every seprate user requests.
+"""
+import os
+
+import json
 from typing import Any
+
+from redis import Redis
 from werkzeug.wrappers import Request, Response
 
 
-# Logger Basic Configuration
-logging.basicConfig(level=logging.INFO)
+rds = Redis(
+    host=os.getenv("RHost", "localhost"), 
+    port=os.getenv("RPort", 6379), 
+    db=os.getenv("RDB", 0),
+    decode_responses=True,
+    retry_on_timeout=True
+)
 
-
+# Typings
 class Environ(object): ...
 
 
 class FixWindowRateLimit:
 
     def __init__(
-        self, 
-        app, 
-        request_limit: int = 100, 
+        self,
+        app,
+        request_limit: int = 50,
         expiration: int = 60
     ) -> None:
         """
-        Every upcoming request will be stored in RAM for quick fetch.
-        For quick fetch from the RAM will use hash table (BuiltIn Dictionary)
-
-        Args:
-            app: Application level
-            request_limit: Ever user have maximum default limit is 100 withing 60 second time window.
-            expiration: After expiration time request_limit will automatically renew.
+        Will fetch IP Address for user's and store into Redis HashSet.
+        For efficient Count of requests.
         """
         self.app = app
-        self.storage = dict()
-        self.request_limit = request_limit
+        self.rlimit = request_limit
         self.expiration = expiration
-    
-    def process_request_limit(self, user_id: Any) -> bool:
+
+    def process_request_limit(self, IPAddress: Any) -> bool:
         """
         Checks if a user can access the API within the current rate limits.
 
@@ -59,31 +65,21 @@ class FixWindowRateLimit:
         - If user's request limit is exceeded, access is denied.
         - If conditions are met, increment the request count and allow access.
         """
-
-        if not self.storage.get(user_id, None):
-            self.storage[user_id] = {
-                "limit": 1,
-                "start_time": datetime.datetime.now()
-            }
-        
-        user_req_limit =  self.storage[user_id]["limit"]
-        start_time = self.storage[user_id]["start_time"]
-
-        if (
-            (datetime.datetime.now() - start_time).seconds > self.expiration
-        ):
-            self.bucket[user_id]["limit"] = 1
-            self.bucket[user_id]["start_time"] = datetime.datetime.now()
-
+        urlimit = rds.get(name=IPAddress)
+        if not urlimit:
+            rds.set(name=IPAddress, value=1)
+            rds.expire(name=IPAddress, time=60, nx=True)
             return True
-        
-        if user_req_limit >= self.request_limit:
+
+        # If rate limit above the mentionded limit,
+        if int(urlimit) >= self.rlimit:
             return False
-        
-        self.storage[user_id]["limit"] += 1
+
+        # Add number of counts,
+        rds.set(name=IPAddress, value=int(urlimit)+1, ex=rds.ttl(name=IPAddress))
         return True
 
-    def __call__(self, environ: Environ) -> Any:
+    def __call__(self, environ: Environ, start_response) -> Any:
         """
         Handles API access requests by invoking the `process_request_limit` method.
 
@@ -92,22 +88,21 @@ class FixWindowRateLimit:
         - If `process_request_limit` returns False, the user is throttled.
         - If True, access to the API is granted.
         """
-        auth_token = Request(environ=environ).authorization
-        
-        # Fetch user_id from payload
-        user_id = jwt.decode(auth_token, "signature", algorithms="HS256")
-        
-        if self.process_request_limit(user_id=user_id):
-            return self.app(environ)
+        ip = Request(environ=environ).remote_addr
+
+        if self.process_request_limit(IPAddress=ip):
+            return self.app(environ, start_response)
 
         resp = Response(
-            response=str({
+            response=json.dumps({
+                "status": "error",
                 "message": (
-                    "Unfortunately, you've reached the maximum number of requests allowed at this time.",
-                    + "Please try again after a few minutes."
-                )
+                    "Rate Limit Exceeded: You have exceeded the maximum number of requests"
+                    + "allowed within a certain time period. Please try again later."
+                ),
+                "data": None
             }),
             mimetype="application/json",
             status=429
         )
-        return resp(environ=environ)
+        return resp(environ=environ, start_response=start_response)
