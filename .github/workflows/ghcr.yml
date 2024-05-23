@@ -3,6 +3,9 @@ name: Push Docker image into Docker Container Registery
 on:
   push:
     branches: [ main ]
+    paths:
+        - '*.py'
+        - 'Dockerfile'
 
 jobs:
     deploy-image:
