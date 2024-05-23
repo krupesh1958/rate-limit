@@ -3,7 +3,9 @@
 from typing import Dict
 from flask import Flask
 
-from middleware.fixed_window import FixWindowRateLimit as RateLimit
+# from middleware.fixed_window import FixWindowRateLimit as RateLimit
+# from middleware.sliding_window import SlidingWindowRateLimit as RateLimit
+from middleware.token_bucket import TokenBucketRateLimit as RateLimit
 
 from api.views import bp as api_bp
 JsonType = Dict[str, int]
