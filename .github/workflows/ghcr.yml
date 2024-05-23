@@ -1,0 +1,30 @@
+name: Push Docker image into Docker Container Registery
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+    deploy-image:
+
+      runs-on: ubuntu-latest
+      permissions:
+        packages: write
+
+      steps:
+          - uses: actions/checkout@v3
+
+          - name: Login docker
+            env: 
+              CR_PAT: ${{ secrets.CR_PAT }}
+            run: echo $CR_PAT | docker login ghcr.io -u krupesh1958 --password-stdin
+
+          - name: Build docker image & tag it
+            run: |
+              docker build -t rate_limit .
+              docker images
+              docker tag rate_limit ghcr.io/krupesh1958/rate-limit-python-backend:$(git rev-parse --verify HEAD)
+
+          - name: Docker push
+            run: |
+              docker push ghcr.io/krupesh1958/rate-limit-python-backend:$(git rev-parse --verify HEAD)

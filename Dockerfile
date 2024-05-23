@@ -1,6 +1,8 @@
 ARG PYTHON_VERSION=3.11.7
 FROM python:${PYTHON_VERSION}-slim as base
 
+LABEL org.opencontainers.image.source=https://github.com/yudiz-solutions/interactive-chatbot-python-backend
+
 ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
