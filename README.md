@@ -1,8 +1,8 @@
 # Rate-Limit
 
-We all have basic idea about APIs but can we know about the Rate Limit.
-APIs creation is not a big thing but the proper standard format way to create APIs
-Its challanging part.
+We all understand the basics of APIs, but what about the Rate Limit?
+API creation is not a significant deal, but the right standard format for creating APIs
+It's a challenging section.
 
 # Prerequisites:
  1. Python
@@ -45,4 +45,8 @@ In application we are use one librarie.
  2. In the application, we built a rate limit algorithm on middleware.
 
 ## What is the middleware?
-Every request/response by throw middleware.
+Middleware is the bridge 🧐
+
+Bridge: Yes, a bridge with one part connected to the application and the other to the users.
+Every request and response should pass via middleware. Middleware is optional, such as counting incoming users' IP addresses. 
+Use middleware to fetch IP addresses for each user.
